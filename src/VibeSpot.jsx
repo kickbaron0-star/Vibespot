@@ -1035,8 +1035,13 @@ function SearchPage({ query, navigate, savedIds, onSave, onSearch }) {
       ...place.vibes, ...place.badges,
       ...(place.idealMoments || []),
     ].join(" ").toLowerCase();
+    // Match if any word from query appears as substring in fields
     const words = q.split(/\s+/).filter(w => w.length > 1);
-    return words.every(word => searchFields.includes(word));
+    // Use partial matching: "gyms" matches "gym", "romantic" matches "romance" etc
+    return words.some(word => {
+      const stem = word.replace(/(s|ing|ed|ly|ful|ness|ment)$/i, "");
+      return searchFields.includes(word) || (stem.length > 2 && searchFields.includes(stem));
+    });
   };
 
   const localFiltered = PLACES.filter(p => {
