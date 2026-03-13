@@ -727,76 +727,6 @@ function Footer() {
 }
 
 // ─── ONBOARDING MODAL ────────────────────────────────────────
-function OnboardingModal({ onComplete }) {
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState({ vibes:[], budget:"€€", city:"Amsterdam", searching:[] });
-
-  const steps = [
-    { q:"What kind of vibes do you love?", key:"vibes", options:["cozy","calm","stylish","lively","luxury","creative","romantic","casual","intimate","local"], multi:true },
-    { q:"What's your typical budget?", key:"budget", options:["€ Budget-friendly","€€ Mid-range","€€€ Premium"], multi:false },
-    { q:"What do you usually search for?", key:"searching", options:["Coffee spots","Brunch places","Dinner restaurants","Cocktail bars","Gyms & fitness","Hidden gems","Work spaces","Nightlife"], multi:true },
-  ];
-
-  const current = steps[step];
-  const isSelected = (opt) => {
-    if (current.multi) return answers[current.key].includes(opt);
-    return answers[current.key] === opt;
-  };
-  const toggle = (opt) => {
-    if (current.multi) {
-      setAnswers(a => ({ ...a, [current.key]: a[current.key].includes(opt) ? a[current.key].filter(v=>v!==opt) : [...a[current.key], opt] }));
-    } else {
-      setAnswers(a => ({ ...a, [current.key]: opt }));
-    }
-  };
-
-  return (
-    <div className="fade-in" style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(0,0,0,0.4)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-      <div className="scale-in" style={{ background:"var(--bg-card)", borderRadius:"var(--radius-xl)", padding:"40px 36px", maxWidth:520, width:"100%", boxShadow:"var(--shadow-xl)" }}>
-        <div style={{ display:"flex", gap:6, marginBottom:32 }}>
-          {steps.map((_,i) => (
-            <div key={i} style={{ flex:1, height:3, borderRadius:2, background: i <= step ? "var(--accent)" : "var(--sand)", transition:"background 0.3s" }} />
-          ))}
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-          <Icons.Sparkle /><span style={{ fontSize:12, fontWeight:600, color:"var(--accent)", letterSpacing:"0.06em", textTransform:"uppercase" }}>Personalize</span>
-        </div>
-        <h2 style={{ fontFamily:"var(--serif)", fontSize:28, fontWeight:600, marginBottom:8, letterSpacing:"-0.02em" }}>{current.q}</h2>
-        <p style={{ fontSize:14, color:"var(--text-muted)", marginBottom:28 }}>{current.multi ? "Select all that apply" : "Choose one"}</p>
-        <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:36 }}>
-          {current.options.map(opt => (
-            <button key={opt} onClick={() => toggle(opt)} style={{
-              padding:"10px 20px", borderRadius:50, cursor:"pointer",
-              border: `2px solid ${isSelected(opt) ? "var(--accent)" : "var(--border)"}`,
-              background: isSelected(opt) ? "var(--accent-bg)" : "transparent",
-              color: isSelected(opt) ? "var(--accent)" : "var(--text-secondary)",
-              fontSize:14, fontWeight:500, fontFamily:"var(--sans)",
-              transition:"all 0.2s",
-            }}>{opt}</button>
-          ))}
-        </div>
-        <div style={{ display:"flex", gap:12 }}>
-          {step > 0 && (
-            <button onClick={() => setStep(s=>s-1)} style={{
-              padding:"12px 24px", borderRadius:50, border:"2px solid var(--border)",
-              background:"transparent", cursor:"pointer", fontSize:14, fontWeight:600,
-              fontFamily:"var(--sans)", color:"var(--text-secondary)",
-            }}>Back</button>
-          )}
-          <button onClick={() => step < steps.length - 1 ? setStep(s=>s+1) : onComplete(answers)}
-            style={{
-              flex:1, padding:"12px 24px", borderRadius:50, border:"none",
-              background:"var(--accent)", color:"white", cursor:"pointer",
-              fontSize:14, fontWeight:600, fontFamily:"var(--sans)",
-              transition:"all 0.2s",
-            }}>
-            {step < steps.length - 1 ? "Continue" : "Start Exploring"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── LANDING PAGE ────────────────────────────────────────────
 function LandingPage({ navigate, onSearch, savedIds, onSave }) {
@@ -1430,7 +1360,6 @@ export default function VibeSpot() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [savedIds, setSavedIds] = useState(new Set());
-  const [showOnboarding, setShowOnboarding] = useState(true);
   const [preferences, setPreferences] = useState(null);
   const [history, setHistory] = useState(["home"]);
   const [userLocation, setUserLocation] = useState(null);
@@ -1487,15 +1416,9 @@ export default function VibeSpot() {
     });
   }, []);
 
-  const completeOnboarding = useCallback((answers) => {
-    setPreferences(answers);
-    setShowOnboarding(false);
-  }, []);
-
   return (
     <>
       <style>{globalCSS}</style>
-      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
       <Navbar page={page} navigate={navigate} />
 
       <main style={{ paddingBottom: 80 }}>
