@@ -1028,19 +1028,26 @@ function SearchPage({ query, navigate, savedIds, onSave, onSearch }) {
   // Fallback: filter local mock data
   const matchesQuery = (place) => {
     if (!query) return true;
-    const q = query.toLowerCase();
+    const q = query.toLowerCase().trim();
     const searchFields = [
       place.name, place.neighborhood, place.category,
       place.summary, place.bestFor,
       ...place.vibes, ...place.badges,
       ...(place.idealMoments || []),
     ].join(" ").toLowerCase();
-    // Match if any word from query appears as substring in fields
+    // Split query into words, check if ANY word (or its stem) appears
     const words = q.split(/\s+/).filter(w => w.length > 1);
-    // Use partial matching: "gyms" matches "gym", "romantic" matches "romance" etc
     return words.some(word => {
-      const stem = word.replace(/(s|ing|ed|ly|ful|ness|ment)$/i, "");
-      return searchFields.includes(word) || (stem.length > 2 && searchFields.includes(stem));
+      // Direct substring match
+      if (searchFields.includes(word)) return true;
+      // Try without trailing s (gyms -> gym)
+      if (word.endsWith("s") && searchFields.includes(word.slice(0, -1))) return true;
+      // Try without trailing es
+      if (word.endsWith("es") && searchFields.includes(word.slice(0, -2))) return true;
+      // Check if any search field word starts with the query word
+      const fieldWords = searchFields.split(/\s+/);
+      if (fieldWords.some(fw => fw.startsWith(word) || word.startsWith(fw))) return true;
+      return false;
     });
   };
 
