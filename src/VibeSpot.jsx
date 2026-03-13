@@ -986,7 +986,7 @@ function LandingPage({ navigate, onSearch, savedIds, onSave }) {
 }
 
 // ─── SEARCH RESULTS PAGE ─────────────────────────────────────
-function SearchPage({ query, navigate, savedIds, onSave, onSearch }) {
+function SearchPage({ query, navigate, savedIds, onSave, onSearch, userLocation, userCity }) {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState("grid");
   const [activeVibes, setActiveVibes] = useState([]);
@@ -1007,7 +1007,12 @@ function SearchPage({ query, navigate, savedIds, onSave, onSearch }) {
     fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, city: "Amsterdam" }),
+      body: JSON.stringify({
+        query,
+        city: userCity || "Amsterdam",
+        lat: userLocation?.lat,
+        lng: userLocation?.lng,
+      }),
     })
       .then(r => r.json())
       .then(data => {
@@ -1087,6 +1092,11 @@ function SearchPage({ query, navigate, savedIds, onSave, onSearch }) {
             <p style={{ fontSize:14, color:"var(--text-secondary)", maxWidth:500, margin:"0 auto" }}>
               {aiSummary || `Showing places matching: "${query}"`}
             </p>
+            {userLocation && (
+              <p style={{ fontSize:12, color:"var(--text-muted)", marginTop:6, display:"flex", alignItems:"center", justifyContent:"center", gap:4 }}>
+                <Icons.Pin /> Searching near {userCity || "your location"}
+              </p>
+            )}
           </div>
         )}
 
@@ -1423,6 +1433,31 @@ export default function VibeSpot() {
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [preferences, setPreferences] = useState(null);
   const [history, setHistory] = useState(["home"]);
+  const [userLocation, setUserLocation] = useState(null);
+  const [userCity, setUserCity] = useState("Amsterdam");
+
+  // Get user location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setUserLocation(loc);
+          // Reverse geocode to get city name
+          if (window.google?.maps?.Geocoder) {
+            new window.google.maps.Geocoder().geocode({ location: loc }, (results, status) => {
+              if (status === "OK" && results[0]) {
+                const city = results[0].address_components.find(c => c.types.includes("locality"));
+                if (city) setUserCity(city.long_name);
+              }
+            });
+          }
+        },
+        () => {}, // silently fail, keep Amsterdam as default
+        { timeout: 5000 }
+      );
+    }
+  }, []);
 
   const navigate = useCallback((target, data) => {
     if (target === "back") {
@@ -1465,7 +1500,7 @@ export default function VibeSpot() {
 
       <main style={{ paddingBottom: 80 }}>
         {page === "home" && <LandingPage navigate={navigate} onSearch={handleSearch} savedIds={savedIds} onSave={toggleSave} />}
-        {page === "search" && <SearchPage query={searchQuery} navigate={navigate} savedIds={savedIds} onSave={toggleSave} onSearch={handleSearch} />}
+        {page === "search" && <SearchPage query={searchQuery} navigate={navigate} savedIds={savedIds} onSave={toggleSave} onSearch={handleSearch} userLocation={userLocation} userCity={userCity} />}
         {page === "detail" && <DetailPage place={selectedPlace} navigate={navigate} savedIds={savedIds} onSave={toggleSave} />}
         {page === "favorites" && <FavoritesPage savedIds={savedIds} onSave={toggleSave} navigate={navigate} places={PLACES} />}
         {page === "profile" && <ProfilePage savedIds={savedIds} preferences={preferences} />}

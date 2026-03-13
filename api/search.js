@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { query, city = "Amsterdam" } = req.body;
+  const { query, city = "Amsterdam", lat, lng } = req.body;
   if (!query) return res.status(400).json({ error: "Missing query" });
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
@@ -74,7 +74,11 @@ searchTerms should be 2-3 Google Maps search queries that would find the right p
     const seenIds = new Set();
 
     for (const term of (intent.searchTerms || [`${query} ${city}`]).slice(0, 3)) {
-      const placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(term)}&key=${GOOGLE_KEY}`;
+      let placesUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(term)}&key=${GOOGLE_KEY}`;
+      // Add location bias if coordinates are available
+      if (lat && lng) {
+        placesUrl += `&location=${lat},${lng}&radius=5000`;
+      }
       const placesRes = await fetch(placesUrl);
       const placesData = await placesRes.json();
 
